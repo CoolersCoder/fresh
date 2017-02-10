@@ -26,6 +26,82 @@ my $FRESH_BIN_PATH = $ENV{FRESH_BIN_PATH} ||= "$ENV{HOME}/bin";
 my $FRESH_NO_LOCAL_CHECK = $ENV{FRESH_NO_LOCAL_CHECK} ||= 1;
 my $FRESH_NO_PATH_EXPORT = $ENV{FRESH_NO_PATH_EXPORT};
 
+sub parse_fresh_dsl_args {
+  my ($file, $line, $cmd, $args_ref, $default_options) = @_;
+
+  my %entry = (
+    file => $file,
+    line => $line,
+  );
+
+  my @args = @{$args_ref};
+
+  for my $arg (@args) {
+    if ($arg eq '--marker=') {
+      entry_error(\%entry, "Marker not specified.");
+    }
+  }
+
+  my %options = ();
+  GetOptionsFromArray(\@args, \%options, 'marker:s', 'file:s', 'bin:s', 'ref:s', 'filter:s', 'ignore-missing') or croak "Parse error at $entry{file}:$entry{line}\n";
+
+  $entry{options} = \%options;
+  if ($default_options) {
+    $entry{options} = {%$default_options, %{$entry{options}}};
+  }
+
+  if (defined($options{marker}) && !defined($options{file})) {
+    entry_error(\%entry, "--marker is only valid with --file.");
+  }
+
+  if (defined($options{ref}) && $options{ref} eq "") {
+    entry_error(\%entry, "You must specify a Git reference.");
+  }
+
+  if (defined($options{filter}) && $options{filter} eq "") {
+    entry_error(\%entry, "You must specify a filter program.");
+  }
+
+  if (defined($options{file}) && defined($options{bin})) {
+    entry_error(\%entry, "Cannot have more than one mode.");
+  }
+
+  if ($cmd eq 'fresh') {
+    for my $arg (@args) {
+      if ($arg =~ /^--/) {
+        entry_error(\%entry, "Unknown option: $arg");
+      }
+    }
+
+    if (@args == 0) {
+      entry_error(\%entry, "Filename is required");
+    } elsif (@args == 1) {
+      $entry{name} = $args[0];
+    } elsif (@args == 2) {
+      $entry{repo} = $args[0];
+      $entry{name} = $args[1];
+    } else {
+      entry_error(\%entry, "Expected 1 or 2 args.");
+    }
+
+    if (defined($entry{name}) && $entry{name} eq ".") {
+      if (defined($options{file}) && $options{file} !~ /\/$/) {
+        entry_error(\%entry, "Whole repositories require destination to be a directory.");
+      }
+
+      if (!defined($options{file})) {
+        entry_error(\%entry, "Whole repositories can only be sourced in file mode.");
+      }
+    }
+  } elsif ($cmd eq 'fresh-options') {
+    croak "fresh-options cannot have args" unless (@args == 0);
+  } else {
+    croak "Unknown command: $cmd";
+  }
+
+  return \%entry;
+}
+
 sub read_freshrc {
   my ($script_fh, $script_filename) = tempfile('fresh.XXXXXX', TMPDIR => 1, UNLINK => 1);
   my ($output_fh, $output_filename) = tempfile('fresh.XXXXXX', TMPDIR => 1, UNLINK => 1);
@@ -77,83 +153,30 @@ SH
   my %env;
 
   while (my $line = <$output_fh>) {
-    my @args = shellwords($line);
-
     my @quoted_args = quotewords(' ', 1, $line);
     shift(@quoted_args);
     shift(@quoted_args);
     my $freshrc_line = join(' ', @quoted_args);
 
-    my %entry = (
-      file => shift(@args),
-      line => shift(@args),
-      freshrc_line => $freshrc_line,
-    );
+    my @args = shellwords($line);
+    my $file = shift(@args);
+    my $line = shift(@args);
     my $cmd = shift(@args);
 
-    for my $arg (@args) {
-      if ($arg eq '--marker=') {
-        entry_error(\%entry, "Marker not specified.");
-      }
-    }
-
-    my %options = ();
-    GetOptionsFromArray(\@args, \%options, 'marker:s', 'file:s', 'bin:s', 'ref:s', 'filter:s', 'ignore-missing') or croak "Parse error at $entry{file}:$entry{line}\n";
-
-    if (defined($options{marker}) && !defined($options{file})) {
-      entry_error(\%entry, "--marker is only valid with --file.");
-    }
-
-    if (defined($options{ref}) && $options{ref} eq "") {
-      entry_error(\%entry, "You must specify a Git reference.");
-    }
-
-    if (defined($options{filter}) && $options{filter} eq "") {
-      entry_error(\%entry, "You must specify a filter program.");
-    }
-
-    if (defined($options{file}) && defined($options{bin})) {
-      entry_error(\%entry, "Cannot have more than one mode.");
-    }
-
     if ($cmd eq 'fresh') {
-      for my $arg (@args) {
-        if ($arg =~ /^--/) {
-          entry_error(\%entry, "Unknown option: $arg");
-        }
-      }
-      if (@args == 0) {
-        entry_error(\%entry, "Filename is required");
-      } elsif (@args == 1) {
-        $entry{name} = $args[0];
-      } elsif (@args == 2) {
-        $entry{repo} = $args[0];
-        $entry{name} = $args[1];
-      } else {
-        entry_error(\%entry, "Expected 1 or 2 args.");
-      }
-      $entry{options} = {%default_options, %options};
-      $entry{env} = {%env};
+      my $entry = parse_fresh_dsl_args($file, $line, $cmd, \@args, \%default_options);
+      $$entry{env} = {%env};
       undef %env;
-      push @entries, \%entry;
+      $$entry{freshrc_line} = $freshrc_line;
+      push @entries, $entry;
     } elsif ($cmd eq 'fresh-options') {
-      croak "fresh-options cannot have args" unless (@args == 0);
-      %default_options = %options;
+      my $entry = parse_fresh_dsl_args($file, $line, $cmd, \@args, undef);
+      %default_options = %{$$entry{options}};
     } elsif ($cmd eq 'env') {
       croak 'expected env to have 2 args' unless @args == 2;
       $env{$args[0]} = $args[1];
     } else {
       croak "Unknown command: $cmd";
-    }
-
-    if (defined($entry{name}) && $entry{name} eq ".") {
-      if (defined($options{file}) && $options{file} !~ /\/$/) {
-        entry_error(\%entry, "Whole repositories require destination to be a directory.");
-      }
-
-      if (!defined($options{file})) {
-        entry_error(\%entry, "Whole repositories can only be sourced in file mode.");
-      }
     }
   }
   close $output_fh;
