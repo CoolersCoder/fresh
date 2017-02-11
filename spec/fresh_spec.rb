@@ -1799,7 +1799,6 @@ SH
     end
 
     it 'for new remotes' do
-      pending
       rc 'fresh existing'
       touch fresh_local_path + 'existing'
       stub_git
@@ -1822,7 +1821,6 @@ SH
     end
 
     it 'for new remotes by url' do
-      pending
       stub_git
 
       run_fresh(
@@ -1842,7 +1840,6 @@ SH
     end
 
     it 'for existing remotes and updates if the file does not exist' do
-      pending
       file_add fresh_path + 'source/user/repo/.git/commands', 'touch "$FRESH_PATH/source/user/repo/file"'
       stub_git
 
@@ -1865,7 +1862,6 @@ SH
     end
 
     it 'without updating existing repo if the file exists' do
-      pending
       mkdir fresh_path + 'source/user/repo/.git'
       touch fresh_path + 'source/user/repo/file'
       stub_git
@@ -1924,7 +1920,6 @@ SH
       end
 
       it 'auto adds --bin' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/catacomb/blob/master/bin/catacomb',
           'fresh twe4ked/catacomb bin/catacomb --bin'
@@ -1932,7 +1927,6 @@ SH
       end
 
       it '--bin will not duplicate' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/catacomb/blob/master/bin/catacomb --bin',
           'fresh twe4ked/catacomb bin/catacomb --bin'
@@ -1940,7 +1934,6 @@ SH
       end
 
       it 'works out --ref' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/catacomb/blob/a62f448/bin/catacomb',
           'fresh twe4ked/catacomb bin/catacomb --bin --ref=a62f448'
@@ -1948,7 +1941,6 @@ SH
       end
 
       it 'auto add --file' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/dotfiles/blob/master/config/pryrc',
           'fresh twe4ked/dotfiles config/pryrc --file'
@@ -1956,7 +1948,6 @@ SH
       end
 
       it '--file will not duplicate' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/dotfiles/blob/master/config/pryrc --file',
           'fresh twe4ked/dotfiles config/pryrc --file'
@@ -1964,7 +1955,6 @@ SH
       end
 
       it 'auto adds --file preserves other options' do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/dotfiles/blob/master/config/pryrc --marker',
           'fresh twe4ked/dotfiles config/pryrc --marker --file'
@@ -1972,7 +1962,6 @@ SH
       end
 
       it "doesn't add --bin or --file to other files" do
-        pending
         expect_fresh_add_args(
           'https://github.com/twe4ked/dotfiles/blob/master/shell/aliases/git.sh',
           'fresh twe4ked/dotfiles shell/aliases/git.sh'

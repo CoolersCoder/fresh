@@ -1073,14 +1073,85 @@ sub confirm {
   }
 }
 
-sub fresh_add {
-  my ($arg) = @_;
+sub escape {
+  my ($input) = @_;
 
-  my $line = "fresh ${\quotemeta($arg)}";
+  my $output = quotemeta($input);
+
+  # FIXME: This is a hack because of the differences between:
+  #
+  #   printf "%q" "$arg"
+  #
+  # and
+  #
+  #   quotemeta($arg");
+  #
+  # It's probably wrong.
+  $output =~ s/\\\//\//g;
+
+  return $output;
+}
+
+# TODO: could this instead build up an "entry" and we could have a way to
+# generate a "fresh line" from an "entry"?
+sub parse_fresh_add_args {
+  my @args = @_;
+
+  my $line;
+  if (prefix_match($args[0], "https://github.com/")) {
+    my $url = shift(@args);
+
+    ($line = $url) =~ s#^https://github.com/##;
+    $line =~ s#/blob/[^/]*/# #;
+
+    for my $arg (@args) {
+      $line = "$line $arg";
+    }
+
+    if (!grep( /--bin|--file/, @args)) {
+      if ($url =~ /bin\//) {
+        $line .= " --bin";
+      } elsif ($url =~ /config\//) {
+        $line .= " --file";
+      }
+    }
+
+    (my $ref = $url) =~ s#^.*/blob/([^/]*)/.*$#$1#;
+    if ("$ref" ne "master") {
+      $line = "$line --ref=$ref";
+    }
+  } else {
+    $line = escape(shift(@args));
+    for my $arg (@args) {
+      $line = "$line ${\escape($arg)}";
+    }
+  }
+
+  return $line;
+}
+
+sub fresh_add {
+  my @args = @_;
+
+  my $line = "fresh ${\parse_fresh_add_args(@args)}";
 
   if (confirm("Add `$line` to $FRESH_RCFILE")) {
     print "Adding `$line` to $FRESH_RCFILE...\n";
     append $FRESH_RCFILE, "$line\n";
+
+    my @args_for_parse = shellwords($line);
+    shift(@args_for_parse);
+    my $entry = parse_fresh_dsl_args(undef, undef, 'fresh', \@args_for_parse, undef);
+
+    my $repo = $$entry{repo};
+
+    # TODO: Ensure the following is tested:
+    #
+    #     -d "$FRESH_PATH/source/$repo" &&
+    if (defined($repo) && -d "$FRESH_PATH/source/$repo" && ! -e "$FRESH_PATH/source/$repo/$$entry{name}") {
+      fresh_update($repo);
+    }
+
     fresh_install;
   } else {
     note "Use `fresh edit` to manually edit your $FRESH_RCFILE."
@@ -1113,8 +1184,8 @@ sub main {
   } else {
     my $bin_name = "fresh-$arg";
 
-    if (-e "$FRESH_LOCAL/$arg") {
-      fresh_add($arg);
+    if ($arg =~ /\// || -e "$FRESH_LOCAL/$arg") {
+      fresh_add($arg, @ARGV);
     } else {
       if (system("which ${\quotemeta($bin_name)} > /dev/null 2> /dev/null") == 0) {
         exec($bin_name, @ARGV) or croak "$!";
