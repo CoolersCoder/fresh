@@ -1016,7 +1016,7 @@ sub fresh_clean_repos {
 
       if (!exists($repo_names{$repo_name})) {
         print "Removing source $repo_name\n";
-        system("rm", "-rf", "$dir") == 0 or exit(1);
+        remove_tree $dir;
       }
     }
 
