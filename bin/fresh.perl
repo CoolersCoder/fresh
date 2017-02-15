@@ -997,9 +997,38 @@ sub fresh_show {
   }
 }
 
+sub fresh_clean_repos {
+  if (-e "$FRESH_PATH/source") { # TODO: This line isn't tested
+    my %repo_names;
+    for my $entry (read_freshrc()) {
+      $repo_names{repo_name($$entry{repo})} = 1;
+    }
+
+    my @dirs;
+    my $wanted = sub {
+      -d && /\.git$/ && push @dirs, dirname($_);
+    };
+    find({wanted => $wanted, no_chdir => 1}, "$FRESH_PATH/source");
+
+    for my $dir (@dirs) {
+      my $repo_name = repo_name_from_source_path($dir);
+
+      if (!exists($repo_names{$repo_name})) {
+        print "Removing source $repo_name\n";
+        system("rm", "-rf", "$dir") == 0 or exit(1);
+      }
+    }
+
+    # TODO: Replace this system call if we find a nice way.
+    # I suspect it's going to be much more complicated though.
+    system("find \"$FRESH_PATH/source\" -mindepth 1 -maxdepth 1 -type d -empty -not -name '.*' -exec rmdir {} \\;") == 0 or exit(1);
+  }
+}
+
 sub fresh_clean {
   fresh_clean_symlinks($ENV{HOME});
   fresh_clean_symlinks("$ENV{HOME}/bin");
+  fresh_clean_repos;
 }
 
 sub fresh_clean_symlinks {

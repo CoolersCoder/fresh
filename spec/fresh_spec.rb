@@ -1711,7 +1711,6 @@ SH
     end
 
     it 'cleans repositories no longer referenced by freshrc' do
-      pending
       rc <<-EOF
         fresh foo/bar file
         fresh git://example.com/foobar.git file
