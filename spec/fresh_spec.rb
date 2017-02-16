@@ -1505,7 +1505,6 @@ SH
       end
 
       it 'allows default bin path to be configured' do
-        pending # TODO: env var set in freshrc, look at all env var specs
         rc <<-EOF
           FRESH_BIN_PATH="$HOME/Applications/bin"
           fresh bin/fresh --bin

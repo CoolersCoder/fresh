@@ -131,6 +131,7 @@ sub read_freshrc {
   }
 
   fresh() {
+    _env FRESH_BIN_PATH
     _env FRESH_NO_BIN_CONFLICT_CHECK
     _output fresh "$@"
   }
@@ -703,12 +704,19 @@ sub fresh_install {
   remove_tree "$FRESH_PATH/build.new";
   make_path "$FRESH_PATH/build.new";
 
+  my @entries = read_freshrc();
+
   if (!defined($FRESH_NO_PATH_EXPORT)) {
-    append "$FRESH_PATH/build.new/shell.sh", '__FRESH_BIN_PATH__=$HOME/bin; [[ ! $PATH =~ (^|:)$__FRESH_BIN_PATH__(:|$) ]] && export PATH="$__FRESH_BIN_PATH__:$PATH"; unset __FRESH_BIN_PATH__' . "\n";
+    my $bin_path = '$HOME/bin';
+    if ($entries[0] && $entries[0]{env}{FRESH_BIN_PATH}) {
+      $bin_path = $entries[0]{env}{FRESH_BIN_PATH};
+      $bin_path =~ s{^\Q$ENV{HOME}\E}{\$HOME};
+    }
+    append "$FRESH_PATH/build.new/shell.sh", '__FRESH_BIN_PATH__='.$bin_path.'; [[ ! $PATH =~ (^|:)$__FRESH_BIN_PATH__(:|$) ]] && export PATH="$__FRESH_BIN_PATH__:$PATH"; unset __FRESH_BIN_PATH__' . "\n";
   }
   append "$FRESH_PATH/build.new/shell.sh", "export FRESH_PATH=\"$FRESH_PATH\"\n";
 
-  for my $entry (read_freshrc()) {
+  for my $entry (@entries) {
     my $prefix = get_entry_prefix($entry);
 
     my @paths = get_entry_paths($entry, $prefix);
@@ -737,7 +745,8 @@ sub fresh_install {
           $build_name .= remove_prefix($name, $$entry{name});
         }
       } elsif (defined($$entry{options}{bin})) {
-        $link_path = $$entry{options}{bin} || '~/bin/' . basename($name);
+        my $bin_path = $$entry{env}{FRESH_BIN_PATH} || '~/bin';
+        $link_path = $$entry{options}{bin} || $bin_path . '/' . basename($name);
         $link_path =~ s{^~/}{$ENV{HOME}/};
         if ($link_path !~ /^\//) {
           entry_error $entry, '--bin file paths cannot be relative.';
