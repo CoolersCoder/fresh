@@ -1009,6 +1009,7 @@ sub fresh_clean_repos {
       -d && /\.git$/ && push @dirs, dirname($_);
     };
     find({wanted => $wanted, no_chdir => 1}, "$FRESH_PATH/source");
+    @dirs = sort(@dirs);
 
     for my $dir (@dirs) {
       my $repo_name = repo_name_from_source_path($dir);
