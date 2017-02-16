@@ -1022,7 +1022,7 @@ sub fresh_clean_repos {
 
     # TODO: Replace this system call if we find a nice way.
     # I suspect it's going to be much more complicated though.
-    system("find \"$FRESH_PATH/source\" -mindepth 1 -maxdepth 1 -type d -empty -not -name '.*' -exec rmdir {} \\;") == 0 or exit(1);
+    system("find", "$FRESH_PATH/source", "-mindepth", "1", "-maxdepth", "1", "-type", "d", "-empty", "-not", "-name", ".*", "-exec", "rmdir", "{}", "\;") == 0 or exit(1);
   }
 }
 
