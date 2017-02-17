@@ -1153,7 +1153,7 @@ sub escape {
 
   my $output = quotemeta($input);
 
-  # FIXME: This is a hack because of the differences between:
+  # TODO: This is a hack because of the differences between:
   #
   #   printf "%q" "$arg"
   #
