@@ -1,9 +1,5 @@
 #!/usr/bin/env perl
 
-# TODO: remove this debug
-# use Data::Dumper;
-# print Dumper(\$entry);
-
 use strict;
 use warnings FATAL => 'all';
 
