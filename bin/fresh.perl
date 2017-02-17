@@ -232,6 +232,40 @@ SH
   return $output;
 }
 
+sub run_callback {
+  my ($callback) = @_;
+
+  my ($script_fh, $script_filename) = tempfile('fresh.XXXXXX', TMPDIR => 1, UNLINK => 1);
+
+  print $script_fh <<'SH';
+  set -euo pipefail
+
+  _FRESH_RCFILE="$1"
+  _FRESH_CALLBACK="$2"
+
+  fresh() {
+    true
+  }
+
+  fresh-options() {
+    true
+  }
+
+  if [ -e "$_FRESH_RCFILE" ]; then
+    source "$_FRESH_RCFILE"
+  fi
+
+  if declare -f "fresh_$_FRESH_CALLBACK" > /dev/null; then
+    eval "fresh_$_FRESH_CALLBACK"
+  fi
+SH
+  close $script_fh;
+
+  system('bash', $script_filename, $FRESH_RCFILE, $callback) == 0 or croak 'callback failed';
+
+  unlink $script_filename;
+}
+
 sub append {
   my ($filename, $data) = @_;
   make_path(dirname($filename));
@@ -823,6 +857,8 @@ EOF
   rename "$FRESH_PATH/build", "$FRESH_PATH/build.old";
   rename "$FRESH_PATH/build.new", "$FRESH_PATH/build";
   remove_tree "$FRESH_PATH/build.old";
+
+  run_callback('after_build');
 
   print "Your dot files are now \033[1;32mfresh\033[0m.\n"
 }

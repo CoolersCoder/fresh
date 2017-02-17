@@ -1597,7 +1597,6 @@ SH
   describe 'fresh_after_build' do
     # TODO: Should we check the CWD here?
     it 'runs fresh after build' do
-      pending
       rc "fresh_after_build() { echo test after_build; }"
 
       run_fresh success: <<-EOF.strip_heredoc
