@@ -211,7 +211,7 @@ sub apply_filter {
     true
   }
 
-  source "$_FRESH_RCFILE"
+  source "$_FRESH_RCFILE" > /dev/null
   cat "$_FRESH_INPUT" | eval "$_FRESH_FILTER" > "$_FRESH_OUTPUT"
 SH
   close $script_fh;
@@ -252,7 +252,7 @@ sub run_callback {
   }
 
   if [ -e "$_FRESH_RCFILE" ]; then
-    source "$_FRESH_RCFILE"
+    source "$_FRESH_RCFILE" > /dev/null
   fi
 
   if declare -f "fresh_$_FRESH_CALLBACK" > /dev/null; then
