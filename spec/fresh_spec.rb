@@ -917,6 +917,8 @@ describe 'fresh' do
     end
   end
 
+  include_examples 'invalid arguments', 'install'
+
   describe 'using --filter' do
     it 'runs filters on files' do
       file_add fresh_local_path + 'aliases', 'foo other_username bar'
@@ -1729,6 +1731,8 @@ SH
       expect(fresh_path + 'source/abc/def/.git').to_not exist
       expect(fresh_path + 'source/abc').to_not exist
     end
+
+    include_examples 'invalid arguments', 'clean'
   end
 
   describe 'show' do
@@ -1774,6 +1778,8 @@ SH
         <#{format_url 'git://example.com/one/two.git'}>
       EOF
     end
+
+    include_examples 'invalid arguments', 'show'
   end
 
   describe 'adding lines to freshrc interactively' do
@@ -2048,6 +2054,8 @@ SH
         END vi
       EOF
     end
+
+    include_examples 'invalid arguments', 'edit'
   end
 
   describe 'fresh-options' do
@@ -2133,6 +2141,8 @@ SH
             foo                Run foo plugin
       EOF
     end
+
+    include_examples 'invalid arguments', 'help'
   end
 
   describe '--marker' do
