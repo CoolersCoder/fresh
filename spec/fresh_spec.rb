@@ -1710,6 +1710,7 @@ SH
 
     it 'cleans repositories no longer referenced by freshrc' do
       rc <<-EOF
+        fresh foo
         fresh foo/bar file
         fresh git://example.com/foobar.git file
       EOF
