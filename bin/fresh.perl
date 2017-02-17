@@ -1231,6 +1231,12 @@ sub fresh_add {
   }
 }
 
+sub prevent_invalid_arguments {
+  if (@_ > 0) {
+    fatal_error "Invalid arguments";
+  }
+}
+
 sub main {
   my $arg = shift(@ARGV) || "install";
 
@@ -1238,21 +1244,21 @@ sub main {
     fresh_update(@ARGV);
     fresh_install_with_latest_binary;
   } elsif ($arg eq "install") {
-    # TODO: should error if passed any args
+    prevent_invalid_arguments(@ARGV);
     fresh_install;
   } elsif ($arg eq "edit") {
-    # TODO: should error if passed any args
+    prevent_invalid_arguments(@ARGV);
     fresh_edit;
   } elsif ($arg eq "show") {
-    # TODO: should error if passed any args
+    prevent_invalid_arguments(@ARGV);
     fresh_show;
   } elsif ($arg eq "clean") {
-    # TODO: should error if passed any args
+    prevent_invalid_arguments(@ARGV);
     fresh_clean;
   } elsif ($arg eq "search") {
     fresh_search(@ARGV);
   } elsif ($arg eq "help") {
-    # TODO: should error if passed any args
+    prevent_invalid_arguments(@ARGV);
     fresh_help;
   } else {
     my $bin_name = "fresh-$arg";
