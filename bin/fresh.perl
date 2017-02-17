@@ -1046,7 +1046,9 @@ sub fresh_clean_repos {
   if (-e "$FRESH_PATH/source") { # TODO: This line isn't tested
     my %repo_names;
     for my $entry (read_freshrc()) {
-      $repo_names{repo_name($$entry{repo})} = 1;
+      if ($$entry{repo}) { # TODO: This line isn't tested
+        $repo_names{repo_name($$entry{repo})} = 1;
+      }
     }
 
     my @dirs;
