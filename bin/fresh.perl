@@ -1238,7 +1238,7 @@ sub prevent_invalid_arguments {
 sub main {
   my $arg = shift(@ARGV) || "install";
 
-  if ($arg eq "update") {
+  if ($arg eq "update" || $arg eq "up") {
     fresh_update(@ARGV);
     fresh_install_with_latest_binary;
   } elsif ($arg eq "install") {
